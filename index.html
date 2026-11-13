@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TECH HANGMAN | Cyber Challenge</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#080e18;color:#eaf3ff;font-family:Arial,sans-serif;padding:20px}
+main{max-width:850px;margin:auto}
+header{text-align:center;padding:20px}
+header h1{color:#36e5ee;letter-spacing:3px}
+header p,.muted{color:#91a3b8}
+.panel{background:#111d2d;border:1px solid #293c52;border-radius:15px;padding:20px;margin:15px 0}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+.stat{background:#17283a;padding:12px;border-radius:10px;text-align:center}
+.stat small{display:block;color:#91a3b8}
+.stat b{display:block;font-size:22px;margin-top:8px;color:#36e5ee}
+h2{font-size:17px}
+.hint{background:#102d3b;border-left:4px solid #36e5ee;padding:14px;border-radius:8px;line-height:1.6}
+#word{display:flex;justify-content:center;flex-wrap:wrap;gap:7px;margin:25px 0}
+.letter{width:30px;height:42px;border-bottom:3px solid #36e5ee;text-align:center;font-size:23px;font-weight:bold}
+.space{border:0;width:12px}
+.keyboard{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+button{cursor:pointer;border:1px solid #304960;border-radius:8px;padding:11px;background:#1b3045;color:white;font-weight:bold}
+button:hover:not(:disabled){background:#145267}
+button:disabled{opacity:.35;cursor:not-allowed}
+.correct{background:#14523c!important;color:#6cf0b1}
+.wrong{background:#632b39!important;color:#ff9aaa}
+.actions{text-align:center;margin-top:18px}
+.primary{background:#36d9e5;color:#07151b;border:0;padding:13px 20px}
+#message{text-align:center;min-height:25px;color:#36e5ee;margin:15px 0}
+#timerbar{height:7px;background:#263b50;border-radius:10px;overflow:hidden;margin-top:8px}
+#timerfill{height:100%;width:100%;background:#55e6a5;transition:width .3s}
+.badges{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.badge{padding:12px 4px;text-align:center;border:1px solid #34465a;border-radius:10px;opacity:.35;filter:grayscale(1)}
+.badge.unlocked{opacity:1;filter:none;border-color:#a78bfa;background:#27213d}
+.badge span{font-size:24px;display:block}
+.badge small{font-size:10px}
+.level{padding:10px;border-radius:8px;margin:5px 0;background:#17283a;color:#aab9ca}
+.level.active{border:1px solid #36e5ee;color:#fff}
+.level.done{color:#55e6a5}
+#result{text-align:center;padding:20px}
+.hidden{display:none}
+@media(max-width:550px){
+ body{padding:10px}.stats{grid-template-columns:repeat(2,1fr)}
+ .keyboard{grid-template-columns:repeat(7,1fr);gap:4px}
+ button{padding:10px 2px}.badges{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+<main>
+<header>
+<h1>⌘ TECH HANGMAN</h1>
+<p>CYBER CHALLENGE · MODO INDIVIDUAL</p>
+<p>Descifra las palabras y conviértete en un maestro de la tecnología.</p>
+</header>
+
+<section class="stats">
+<div class="stat"><small>⭐ Puntos</small><b id="score">0</b></div>
+<div class="stat"><small>⏱ Tiempo</small><b id="clock">30s</b><div id="timerbar"><div id="timerfill"></div></div></div>
+<div class="stat"><small>❤️ Intentos</small><b id="lives">6/6</b></div>
+<div class="stat"><small>🏆 Palabras</small><b id="wins">0/9</b></div>
+</section>
+
+<section class="panel">
+<h2 id="levelTitle">NIVEL 1 — NOVATO DEL CÓDIGO</h2>
+<p class="muted" id="wordNumber">Palabra 1 de 3</p>
+<div class="hint">
+<strong>📡 PISTA / DEFINICIÓN</strong>
+<p id="hint">Presiona comenzar para iniciar.</p>
+</div>
+
+<div id="game">
+<div id="word"></div>
+<p style="text-align:center">Errores: <span id="errors">♡ ♡ ♡ ♡ ♡ ♡</span></p>
+<div id="message">¡Elige una letra!</div>
+<div class="keyboard" id="keyboard"></div>
+<div class="actions">
+<button onclick="restart()" >↻ Reiniciar</button>
+</div>
+</div>
+
+<div id="result" class="hidden">
+<div style="font-size:45px" id="resultIcon">🎉</div>
+<h2 id="resultTitle">¡Correcto!</h2>
+<p id="resultText"></p>
+<button class="primary" id="nextButton" onclick="nextWord()">Siguiente palabra →</button>
+</div>
+</section>
+
+<section class="panel">
+<h2>📡 PROGRESO DE NIVELES</h2>
+<div class="level active" id="level0">💻 Nivel 1: Novato del Código</div>
+<div class="level" id="level1">🛡️ Nivel 2: Hacker Ético</div>
+<div class="level" id="level2">🧠 Nivel 3: Arquitecto de IA</div>
+</section>
+
+<section class="panel">
+<h2>🏅 INVENTARIO DE INSIGNIAS</h2>
+<div class="badges">
+<div class="badge" id="speed"><span>⚡</span><b>Velocista Tech</b><br><small>Resolver en 15 segundos</small></div>
+<div class="badge" id="debug"><span>🔧</span><b>Depurador Supremo</b><br><small>Sin errores</small></div>
+<div class="badge" id="strategy"><span>🎯</span><b>Estratega</b><br><small>3 aciertos seguidos</small></div>
+<div class="badge" id="master"><span>👑</span><b>Maestro Tech</b><br><small>Completar el juego</small></div>
+</div>
+<p class="muted" id="badgeCount">Insignias: 0/4</p>
+</section>
+</main>
+
+<script>
+const levels=[
+{title:"NOVATO DEL CÓDIGO",words:[
+["HARDWARE","Son las partes físicas de una computadora que puedes tocar, como el teclado y el monitor."],
+["BUG","Es un error en un programa que provoca que funcione incorrectamente."],
+["PIXEL","Es la unidad más pequeña de una imagen digital."]]},
+{title:"HACKER ÉTICO",words:[
+["FIREWALL","Sistema de seguridad que controla el tráfico de una red."],
+["ENCRIPCION","Proceso que transforma información en un código para protegerla."],
+["PHISHING","Técnica de engaño que busca robar contraseñas mediante mensajes falsos."]]},
+{title:"ARQUITECTO DE IA",words:[
+["MACHINE LEARNING","Rama de la inteligencia artificial que permite aprender patrones a partir de datos."],
+["PROMPT","Instrucción o pregunta que damos a una inteligencia artificial."],
+["RED NEURONAL","Modelo de inteligencia artificial inspirado en las conexiones del cerebro."]]}
+];
+
+const alphabet="ABCDEFGHIJKLMNÑOPQRSTUVWXYZ".split("");
+let level=0,index=0,errors=0,guessed=[],score=0,wins=0;
+let seconds=30,timer=null,active=false,ended=false,streak=0;
+let badges={speed:false,debug:false,strategy:false,master:false};
+let startTime=0;
+
+function normalize(s){
+ return s.normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+}
+function current(){return levels[level].words[index]}
+function clearTimer(){if(timer){clearInterval(timer);timer=null}}
+
+function clockUpdate(){
+ document.getElementById("clock").textContent=seconds+"s";
+ document.getElementById("timerfill").style.width=(seconds/30*100)+"%";
+ document.getElementById("timerfill").style.background=seconds<=10?"#ff647e":"#55e6a5";
+}
+function startTimer(){
+ clearTimer();
+ seconds=30;
+ startTime=Date.now();
+ clockUpdate();
+ timer=setInterval(()=>{
+  seconds=Math.max(0,30-Math.floor((Date.now()-startTime)/1000));
+  clockUpdate();
+  if(seconds===0){
+   clearTimer();
+   mistake("⏱ ¡Tiempo agotado! Pierdes un intento.");
+   if(!ended)startTimer();
+  }
+ },200);
+}
+function award(id){
+ if(badges[id])return;
+ badges[id]=true;
+ document.getElementById(id).classList.add("unlocked");
+ document.getElementById("badgeCount").textContent="Insignias: "+Object.values(badges).filter(Boolean).length+"/4";
+}
+function render(){
+ document.getElementById("levelTitle").textContent="NIVEL "+(level+1)+" — "+levels[level].title;
+ document.getElementById("wordNumber").textContent="Palabra "+(index+1)+" de 3";
+ document.getElementById("hint").textContent=current()[1];
+ document.getElementById("score").textContent=score;
+ document.getElementById("wins").textContent=wins+"/9";
+ document.getElementById("lives").textContent=(6-errors)+"/6";
+ document.getElementById("errors").textContent=Array.from({length:6},(_,i)=>i<errors?"♥":"♡").join(" ");
+ document.querySelectorAll(".level").forEach((el,i)=>{
+  el.className="level"+(i===level?" active":i<level?" done":"");
+ });
+ renderWord();
+ renderKeyboard();
+}
+function renderWord(){
+ const answer=normalize(current()[0]);
+ const word=document.getElementById("word");
+ word.innerHTML="";
+ [...answer].forEach(letter=>{
+  const el=document.createElement("span");
+  el.className="letter"+(letter===" "?" space":"");
+  el.textContent=letter===" "?"":guessed.includes(letter)?letter:"";
+  word.appendChild(el);
+ });
+}
+function renderKeyboard(){
+ const keyboard=document.getElementById("keyboard");
+ keyboard.innerHTML="";
+ alphabet.forEach(letter=>{
+  const b=document.createElement("button");
+  b.textContent=letter;
+  b.disabled=!active||ended||guessed.includes(letter);
+  if(guessed.includes(letter)){
+   b.className=normalize(current()[0]).includes(letter)?"correct":"wrong";
+  }
+  b.onclick=()=>guess(letter);
+  keyboard.appendChild(b);
+ });
+}
+function guess(letter){
+ if(!active||ended||guessed.includes(letter))return;
+ guessed.push(letter);
+ const answer=normalize(current()[0]);
+ if(answer.includes(letter)){
+  document.getElementById("message").textContent="✓ ¡Buena elección!";
+  if([...answer].every(c=>c===" "||guessed.includes(c)))win();
+ }else{
+  mistake("✕ Esa letra no está en la palabra.");
+ }
+ render();
+}
+function mistake(message){
+ if(ended||!active)return;
+ errors++;
+ streak=0;
+ document.getElementById("message").textContent=message;
+ render();
+ if(errors>=6)lose();
+}
+function win(){
+ if(ended)return;
+ ended=true;active=false;clearTimer();
+ wins++;score+=100+seconds*2;
+ streak++;
+ if(seconds>=15)award("speed");
+ if(errors===0)award("debug");
+ if(streak>=3)award("strategy");
+ if(wins===9)award("master");
+ finish("🎉","¡PALABRA DESCUBIERTA!","La palabra era "+current()[0]+". ¡Ganaste "+(100+seconds*2)+" puntos!");
+}
+function lose(){
+ ended=true;active=false;clearTimer();streak=0;
+ finish("💻","¡INTENTOS AGOTADOS!","La palabra correcta era "+current()[0]+". ¡No te rindas!");
+}
+function finish(icon,title,message){
+ document.getElementById("game").classList.add("hidden");
+ document.getElementById("result").classList.remove("hidden");
+ document.getElementById("resultIcon").textContent=icon;
+ document.getElementById("resultTitle").textContent=title;
+ document.getElementById("resultText").textContent=message;
+ document.getElementById("nextButton").textContent=wins===9?"JUGAR OTRA VEZ ↻":"SIGUIENTE PALABRA →";
+}
+function nextWord(){
+ if(wins===9){restart();return}
+ index++;
+ if(index===3){index=0;level++}
+ if(level===3){award("master");finish("🏆","¡CAMPEÓN TECH!","Completaste todos los niveles.");return}
+ startRound();
+}
+function startRound(){
+ errors=0;guessed=[];ended=false;active=true;
+ document.getElementById("game").classList.remove("hidden");
+ document.getElementById("result").classList.add("hidden");
+ document.getElementById("message").textContent="¡Elige una letra!";
+ render();startTimer();
+}
+function restart(){
+ clearTimer();level=0;index=0;errors=0;guessed=[];score=0;wins=0;streak=0;
+ Object.keys(badges).forEach(id=>{
+  badges[id]=false;
+  document.getElementById(id).classList.remove("unlocked");
+ });
+ document.getElementById("badgeCount").textContent="Insignias: 0/4";
+ startRound();
+}
+document.addEventListener("keydown",e=>{
+ const key=e.key.toUpperCase();
+ if(e.key==="Enter"&&ended){nextWord();return}
+ if(alphabet.includes(key))guess(key);
+});
+startRound();
+</script>
+</body>
+</html>
