@@ -1,0 +1,2 @@
+# JuegoInformaticaY
+Esta página web es un juego interactivo sobre informática básica 
